@@ -1,16 +1,19 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useId } from "react";
 
 // --- Simple inline SVG logo for Dream Grid (gradient grid mark) ---
 function Logo({ className = "h-9 w-9" }) {
+  const uid = useId().replace(/:/g, "");
+  const gradId = `dgGrad-${uid}`;
+  const glowId = `glow-${uid}`;
   return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden>
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
       <defs>
-        <linearGradient id="dgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#22d3ee" />
           <stop offset="50%" stopColor="#8b5cf6" />
           <stop offset="100%" stopColor="#a3e635" />
         </linearGradient>
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="2" result="blur" />
           <feMerge>
             <feMergeNode in="blur"/>
@@ -18,11 +21,11 @@ function Logo({ className = "h-9 w-9" }) {
           </feMerge>
         </filter>
       </defs>
-      <rect x="6" y="6" width="52" height="52" rx="12" fill="url(#dgGrad)" opacity="0.2" />
+      <rect x="6" y="6" width="52" height="52" rx="12" fill={`url(#${gradId})`} opacity="0.2" />
       {/* Grid squares */}
       {Array.from({ length: 3 }).map((_, r) => (
         Array.from({ length: 3 }).map((_, c) => (
-          <rect key={`${r}-${c}`} x={14 + c * 12} y={14 + r * 12} width="8" height="8" rx="2" fill="url(#dgGrad)" filter="url(#glow)"/>
+          <rect key={`${r}-${c}`} x={14 + c * 12} y={14 + r * 12} width="8" height="8" rx="2" fill={`url(#${gradId})`} filter={`url(#${glowId})`}/>
         ))
       ))}
     </svg>
@@ -31,26 +34,32 @@ function Logo({ className = "h-9 w-9" }) {
 
 // --- Animated liquid / fluid background ---
 function LiquidBackground() {
+  const uid = useId().replace(/:/g, "");
+  const bgGradId = `bgGrad-${uid}`;
+  const pulse1Id = `pulse1-${uid}`;
+  const pulse2Id = `pulse2-${uid}`;
+  const pulse3Id = `pulse3-${uid}`;
+  const fluidId = `fluid-${uid}`;
   return (
-    <svg className="absolute inset-0 -z-10 h-full w-full" viewBox="0 0 800 600" preserveAspectRatio="none" aria-hidden>
+    <svg className="absolute inset-0 -z-10 h-full w-full" viewBox="0 0 800 600" preserveAspectRatio="none" aria-hidden="true">
       <defs>
-        <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={bgGradId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#0b0f14" />
           <stop offset="100%" stopColor="#0b0f14" />
         </linearGradient>
-        <radialGradient id="pulse1" cx="20%" cy="20%" r="60%">
+        <radialGradient id={pulse1Id} cx="20%" cy="20%" r="60%">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.28" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id="pulse2" cx="80%" cy="30%" r="60%">
+        <radialGradient id={pulse2Id} cx="80%" cy="30%" r="60%">
           <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.22" />
           <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id="pulse3" cx="50%" cy="80%" r="60%">
+        <radialGradient id={pulse3Id} cx="50%" cy="80%" r="60%">
           <stop offset="0%" stopColor="#a3e635" stopOpacity="0.18" />
           <stop offset="100%" stopColor="#a3e635" stopOpacity="0" />
         </radialGradient>
-        <filter id="fluid">
+        <filter id={fluidId}>
           <feTurbulence type="fractalNoise" baseFrequency="0.004 0.006" numOctaves="2" seed="2" result="noise">
             <animate attributeName="baseFrequency" dur="18s" values="0.004 0.006;0.009 0.004;0.004 0.006" repeatCount="indefinite"/>
           </feTurbulence>
@@ -59,11 +68,11 @@ function LiquidBackground() {
           </feDisplacementMap>
         </filter>
       </defs>
-      <rect width="100%" height="100%" fill="url(#bgGrad)" />
-      <g filter="url(#fluid)">
-        <rect width="100%" height="100%" fill="url(#pulse1)" />
-        <rect width="100%" height="100%" fill="url(#pulse2)" />
-        <rect width="100%" height="100%" fill="url(#pulse3)" />
+      <rect width="100%" height="100%" fill={`url(#${bgGradId})`} />
+      <g filter={`url(#${fluidId})`}>
+        <rect width="100%" height="100%" fill={`url(#${pulse1Id})`} />
+        <rect width="100%" height="100%" fill={`url(#${pulse2Id})`} />
+        <rect width="100%" height="100%" fill={`url(#${pulse3Id})`} />
       </g>
     </svg>
   );
