@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dream Grid</title>
+    <meta name="description" content="Dream Grid — Futuristic, detailed, thoroughly planned websites & apps" />
+
+    <!-- Tailwind (CDN build for quick preview) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React 18 UMD -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel for in-browser JSX transform (dev only) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950">
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="env,react">
+      const { useMemo } = React;
+
+      // --- Simple inline SVG logo for Dream Grid (gradient grid mark) ---
+      function Logo({ className = "h-9 w-9" }) {
+        return (
+          <svg viewBox="0 0 64 64" className={className} aria-hidden>
+            <defs>
+              <linearGradient id="dgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#22d3ee" />
+                <stop offset="50%" stopColor="#8b5cf6" />
+                <stop offset="100%" stopColor="#a3e635" />
+              </linearGradient>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <rect x="6" y="6" width="52" height="52" rx="12" fill="url(#dgGrad)" opacity="0.2" />
+            {/* Grid squares */}
+            {Array.from({ length: 3 }).map((_, r) => (
+              Array.from({ length: 3 }).map((_, c) => (
+                <rect key={`${r}-${c}`} x={14 + c * 12} y={14 + r * 12} width="8" height="8" rx="2" fill="url(#dgGrad)" filter="url(#glow)"/>
+              ))
+            ))}
+          </svg>
+        );
+      }
+
+      // --- Animated liquid / fluid background ---
+      function LiquidBackground() {
+        return (
+          <svg className="absolute inset-0 -z-10 h-full w-full" viewBox="0 0 800 600" preserveAspectRatio="none" aria-hidden>
+            <defs>
+              <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#0b0f14" />
+                <stop offset="100%" stopColor="#0b0f14" />
+              </linearGradient>
+              <radialGradient id="pulse1" cx="20%" cy="20%" r="60%">
+                <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.28" />
+                <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient id="pulse2" cx="80%" cy="30%" r="60%">
+                <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.22" />
+                <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient id="pulse3" cx="50%" cy="80%" r="60%">
+                <stop offset="0%" stopColor="#a3e635" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#a3e635" stopOpacity="0" />
+              </radialGradient>
+              <filter id="fluid">
+                <feTurbulence type="fractalNoise" baseFrequency="0.004 0.006" numOctaves="2" seed="2" result="noise">
+                  <animate attributeName="baseFrequency" dur="18s" values="0.004 0.006;0.009 0.004;0.004 0.006" repeatCount="indefinite"/>
+                </feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="30" xChannelSelector="R" yChannelSelector="G">
+                  <animate attributeName="scale" dur="18s" values="30;45;30" repeatCount="indefinite"/>
+                </feDisplacementMap>
+              </filter>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#bgGrad)" />
+            <g filter="url(#fluid)">
+              <rect width="100%" height="100%" fill="url(#pulse1)" />
+              <rect width="100%" height="100%" fill="url(#pulse2)" />
+              <rect width="100%" height="100%" fill="url(#pulse3)" />
+            </g>
+          </svg>
+        );
+      }
+
+      // Helper for mailto form submit (no backend required for MVP)
+      function mailtoOnSubmit(e) {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        const name = data.get("name");
+        const email = data.get("email");
+        const phone = data.get("phone");
+        const message = data.get("message");
+        const subject = encodeURIComponent(`New Project Inquiry from ${name}`);
+        const body = encodeURIComponent(
+          `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\nProject details:\n${message}\n\nHeard about: Dream Grid website form.`
+        );
+        window.location.href = `mailto:mgbiggins@gmail.com,HoltonWilliams55@gmail.com?subject=${subject}&body=${body}`;
+      }
+
+      // Price cards data (pulled from your provided structure)
+      const webPlans = [
+        {
+          title: "Starter Rebrand",
+          price: "$799",
+          monthly: "$49/mo",
+          features: [
+            "1–3 pages, mobile-first",
+            "Copy polish & on-page SEO",
+            "Analytics setup",
+            "2 rounds of edits",
+            "Speed optimizations",
+          ],
+          highlight: true,
+        },
+        {
+          title: "Business Core",
+          price: "$1,499",
+          monthly: "$79/mo",
+          features: [
+            "5–8 pages + service pages",
+            "Lead forms & blog setup",
+            "Schema basics",
+            "3 rounds of edits",
+            "Monthly reporting",
+          ],
+        },
+        {
+          title: "Growth",
+          price: "$2,499",
+          monthly: "$99/mo",
+          features: [
+            "10–15 pages",
+            "Advanced SEO setup",
+            "A/B test (1/mo)",
+            "CRM integration",
+            "Quarterly UX tune-up",
+          ],
+        },
+        {
+          title: "E‑commerce Lite",
+          price: "$2,999",
+          monthly: "$129/mo",
+          features: [
+            "Up to 50 products",
+            "Stripe/PayPal",
+            "Tax & shipping rules",
+            "Abandoned‑cart email",
+            "Product schema",
+          ],
+        },
+        {
+          title: "E‑commerce Pro",
+          price: "$4,499",
+          monthly: "$179/mo",
+          features: [
+            "Up to 200 products",
+            "Bundles & discounts",
+            "Subscriptions",
+            "Performance budget",
+            "Quarterly CRO review",
+          ],
+        },
+      ];
+
+      const appPlans = [
+        {
+          title: "App MVP (no/low‑code)",
+          price: "$4,999–$9,999",
+          features: [
+            "Auth & core flows",
+            "1–2 data models",
+            "Payments (optional)",
+            "Analytics",
+            "Beta testing setup",
+          ],
+        },
+        {
+          title: "App Production (custom)",
+          price: "from $12,500",
+          features: [
+            "Custom components",
+            "Third‑party integrations",
+            "Staged rollouts",
+            "Performance monitoring",
+            "Release management",
+          ],
+        },
+      ];
+
+      const addOns = [
+        { title: "CRM & Lead Capture", price: "$29/mo", note: "Chat widget, forms→pipeline, email/SMS templates, basic automations" },
+        { title: "SEO Local", price: "$300/mo", note: "Citations, GBP optimization, review prompts, 2 SEO pages/quarter" },
+        { title: "Content (per post)", price: "$250", note: "800–1,000 words, optimized, internal links" },
+        { title: "Ads Management", price: "$300/mo + 10%", note: "Monthly report & ongoing optimizations" },
+        { title: "Care+ (add‑on)", price: "+$40/mo", note: "24–48h content changes, uptime monitoring, quarterly strategy call" },
+      ];
+
+      function DreamGridSite() {
+        const year = useMemo(() => new Date().getFullYear(), []);
+
+        return (
+          <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden">
+            <LiquidBackground />
+
+            {/* NAVBAR */}
+            <header className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-slate-950/40 bg-slate-900/40 border-b border-white/5">
+              <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Logo />
+                  <div className="leading-tight">
+                    <div className="text-xl font-semibold tracking-tight">Dream Grid</div>
+                    <div className="text-[11px] text-slate-400">Futuristic, detailed, thoroughly planned</div>
+                  </div>
+                </div>
+                <nav className="hidden md:flex items-center gap-6 text-slate-300">
+                  <a href="#services" className="hover:text-white">Services</a>
+                  <a href="#pricing" className="hover:text-white">Pricing</a>
+                  <a href="#process" className="hover:text-white">Process</a>
+                  <a href="#contact" className="hover:text-white">Contact</a>
+                  <a href="#contact" className="ml-2 inline-flex items-center rounded-xl px-4 py-2 bg-gradient-to-r from-cyan-400 via-violet-500 to-lime-400 text-slate-900 font-semibold shadow-lg shadow-cyan-500/10 hover:shadow-violet-500/20">Get a Quote</a>
+                </nav>
+              </div>
+            </header>
+
+            {/* HERO */}
+            <section className="relative">
+              <div className="mx-auto max-w-7xl px-4 py-20 md:py-28">
+                <div className="max-w-3xl">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    24/7 website & app monitoring
+                  </div>
+                  <h1 className="mt-5 text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight">
+                    Taking your <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-violet-400 to-lime-300">website & app</span> from idea to
+                    <span className="whitespace-nowrap"> production—fast.</span>
+                  </h1>
+                  <p className="mt-5 text-slate-300 text-lg md:text-xl max-w-2xl">
+                    Built from scratch. Simple to understand and navigate. Futuristic detail, planned end‑to‑end.
+                    We design, build, redesign, and monitor so you can grow.
+                  </p>
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    <a href="#pricing" className="inline-flex items-center rounded-xl px-5 py-3 bg-gradient-to-r from-cyan-400 via-violet-500 to-lime-400 text-slate-900 font-semibold shadow-lg shadow-cyan-500/10">See Pricing</a>
+                    <a href="tel:15303003635" className="inline-flex items-center rounded-xl px-5 py-3 bg-white/10 hover:bg-white/15 border border-white/10">Call Mark: 530‑300‑3635</a>
+                    <a href="tel:15307778721" className="inline-flex items-center rounded-xl px-5 py-3 bg-white/10 hover:bg-white/15 border border-white/10">Call Holton: 530‑777‑8721</a>
+                  </div>
+                  <div className="mt-6 text-sm text-slate-400">Co‑Founders: Mark Biggins (Developer) • Holton Williams (SEO Specialist)</div>
+                </div>
+              </div>
+            </section>
+
+            {/* PILLARS / QUICK FEATURES */}
+            <section className="relative">
+              <div className="mx-auto max-w-7xl px-4 pb-12">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {[
+                    { t: "From‑scratch builds", d: "Clean, performant, documented code" },
+                    { t: "Simple UX", d: "Clear structure, fast paths to action" },
+                    { t: "24/7 Monitoring", d: "Uptime + change requests covered" },
+                    { t: "Apps too", d: "We build & redesign web + mobile" },
+                  ].map((item) => (
+                    <div key={item.t} className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur hover:bg-white/10 transition">
+                      <div className="text-lg font-semibold">{item.t}</div>
+                      <div className="text-slate-300 text-sm mt-1">{item.d}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* SERVICES */}
+            <section id="services" className="relative">
+              <div className="mx-auto max-w-7xl px-4 py-14">
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">What we build</h2>
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[
+                    {
+                      title: "Websites",
+                      desc: "Business sites, landing pages, e‑commerce. Modern stack, SEO‑ready, blazing fast.",
+                    },
+                    {
+                      title: "Apps",
+                      desc: "From MVP to production. No/low‑code when it’s smart, custom when it matters.",
+                    },
+                    {
+                      title: "Redesigns",
+                      desc: "Level‑up your existing site/app: UX cleanup, speed, accessibility, conversions.",
+                    },
+                    {
+                      title: "Brand & Content",
+                      desc: "Logo refresh, content strategy, on‑brand copy, photography.",
+                    },
+                    {
+                      title: "Analytics & SEO",
+                      desc: "Search fundamentals, schema, dashboards, and insights that drive action.",
+                    },
+                    {
+                      title: "Monitoring & Care",
+                      desc: "Proactive fixes, uptime, and fast content updates—so you never stall.",
+                    },
+                  ].map((s) => (
+                    <div key={s.title} className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
+                      <div className="text-lg font-semibold">{s.title}</div>
+                      <div className="text-slate-300 mt-1 text-sm">{s.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* PRICING */}
+            <section id="pricing" className="relative">
+              <div className="mx-auto max-w-7xl px-4 py-14">
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Pricing</h2>
+                <p className="text-slate-300 mt-2 max-w-3xl">
+                  Transparent, value‑first pricing. We build any and all websites and apps—and we’ll tailor scope to your goals.
+                </p>
+
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {webPlans.map((p) => (
+                    <div key={p.title} className={`rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition ${p.highlight ? "ring-1 ring-cyan-400/30" : ""}`}>
+                      <div className="flex items-baseline justify-between">
+                        <div className="text-lg font-semibold">{p.title}</div>
+                        <div className="text-sm text-slate-400">{p.monthly}</div>
+                      </div>
+                      <div className="mt-2 text-3xl font-bold">{p.price}</div>
+                      <ul className="mt-4 space-y-2 text-sm text-slate-300">
+                        {p.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2">
+                            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-violet-500" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <a href="#contact" className="mt-5 inline-flex items-center justify-center w-full rounded-xl px-4 py-2.5 bg-gradient-to-r from-cyan-400 via-violet-500 to-lime-400 text-slate-900 font-semibold">Start here</a>
+                    </div>
+                  ))}
+                </div>
+
+                {/* App Pricing */}
+                <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {appPlans.map((p) => (
+                    <div key={p.title} className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
+                      <div className="text-lg font-semibold">{p.title}</div>
+                      <div className="mt-2 text-3xl font-bold">{p.price}</div>
+                      <ul className="mt-4 space-y-2 text-sm text-slate-300">
+                        {p.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2">
+                            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-violet-500" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <a href="#contact" className="mt-5 inline-flex items-center justify-center w-full rounded-xl px-4 py-2.5 bg-white/10 border border-white/10 hover:bg-white/15">Discuss scope</a>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add‑ons */}
+                <div className="mt-10">
+                  <h3 className="text-xl font-semibold">Monthly add‑ons</h3>
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {addOns.map((a) => (
+                      <div key={a.title} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{a.title}</div>
+                          <div className="text-cyan-300 font-semibold">{a.price}</div>
+                        </div>
+                        <div className="text-slate-300 mt-1 text-sm">{a.note}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* PROCESS */}
+            <section id="process" className="relative">
+              <div className="mx-auto max-w-7xl px-4 py-14">
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">How we ship fast</h2>
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {[
+                    { t: "1. Discover", d: "Goals, content, success metrics" },
+                    { t: "2. Design", d: "Wireframes → polished UI" },
+                    { t: "3. Build", d: "Modern stack, clean code" },
+                    { t: "4. Launch", d: "Perf, SEO, analytics, QA" },
+                    { t: "5. Monitor", d: "24/7 uptime & quick edits" },
+                  ].map((s, i) => (
+                    <div key={s.t} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                      <div className="text-sm text-slate-400">Step {i + 1}</div>
+                      <div className="text-lg font-semibold">{s.t}</div>
+                      <div className="text-slate-300 mt-1 text-sm">{s.d}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* CONTACT */}
+            <section id="contact" className="relative">
+              <div className="mx-auto max-w-7xl px-4 py-14">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-1">
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Contact us</h2>
+                    <p className="text-slate-300 mt-2">Quick form below, or reach out directly.</p>
+
+                    <div className="mt-6 space-y-4 text-sm">
+                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <div className="font-semibold">Mark Biggins — Developer / Co‑Founder</div>
+                        <div className="text-slate-300">Phone: <a className="underline" href="tel:15303003635">530‑300‑3635</a></div>
+                        <div className="text-slate-300">Email: <a className="underline" href="mailto:mgbiggins@gmail.com">mgbiggins@gmail.com</a></div>
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <div className="font-semibold">Holton Williams — SEO Specialist / Co‑Founder</div>
+                        <div className="text-slate-300">Phone: <a className="underline" href="tel:15307778721">530‑777‑8721</a></div>
+                        <div className="text-slate-300">Email: <a className="underline" href="mailto:HoltonWilliams55@gmail.com">HoltonWilliams55@gmail.com</a></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <form onSubmit={mailtoOnSubmit} className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm text-slate-300">Your Name</label>
+                          <input name="name" required className="mt-1 w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Jane Doe" />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-slate-300">Email</label>
+                          <input type="email" name="email" required className="mt-1 w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-400" placeholder="jane@email.com" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm text-slate-300">Phone</label>
+                          <input name="phone" className="mt-1 w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-400" placeholder="(555) 555‑5555" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm text-slate-300">Project details</label>
+                          <textarea name="message" rows={5} className="mt-1 w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Tell us what you want to build."></textarea>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center gap-3">
+                        <button type="submit" className="inline-flex items-center rounded-xl px-5 py-3 bg-gradient-to-r from-cyan-400 via-violet-500 to-lime-400 text-slate-900 font-semibold">Send inquiry</button>
+                        <span className="text-slate-400 text-sm">No spam. We’ll get back within 24 hours.</span>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* FOOTER */}
+            <footer className="relative border-t border-white/5 bg-black/20">
+              <div className="mx-auto max-w-7xl px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Logo className="h-7 w-7" />
+                  <div className="text-sm text-slate-300">© {year} Dream Grid. All rights reserved.</div>
+                </div>
+                <div className="text-xs text-slate-400">
+                  Built with a transparent dark mode aesthetic and fluid hero animation.
+                </div>
+              </div>
+            </footer>
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<DreamGridSite />);
+    </script>
+  </body>
+</html>
